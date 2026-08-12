@@ -1,0 +1,10 @@
+# Nmap 7.95 scan initiated Wed Aug 12 23:50:14 2026 as: /usr/lib/nmap/nmap -p 139,445 -oN nmap-victim-smb.txt 192.168.56.20
+Nmap scan report for 192.168.56.20
+Host is up (0.00052s latency).
+
+PORT    STATE SERVICE
+139/tcp open  netbios-ssn
+445/tcp open  microsoft-ds
+MAC Address: 08:00:27:99:B1:5F (PCS Systemtechnik/Oracle VirtualBox virtual NIC)
+
+# Nmap done at Wed Aug 12 23:50:28 2026 -- 1 IP address (1 host up) scanned in 13.12 seconds

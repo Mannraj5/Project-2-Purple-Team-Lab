@@ -1,0 +1,26 @@
+File name:           /captures/baseline-clean-full.pcap
+File type:           Wireshark/tcpdump/... - pcap
+File encapsulation:  Ethernet
+File timestamp precision:  microseconds (6)
+Packet size limit:   file hdr: 262144 bytes
+Number of packets:   9,092
+File size:           4,551 kB
+Data size:           4,406 kB
+Capture duration:    976.489615 seconds
+Earliest packet time: 2026-08-12 23:21:54.149080
+Latest packet time:   2026-08-12 23:38:10.638695
+Data byte rate:      4,512 bytes/s
+Data bit rate:       36 kbps
+Average packet size: 484.63 bytes
+Average packet rate: 9 packets/s
+SHA256:              96ed0c0f0a32f104dcdeddb60415189d4213bbe703a058b0ee5aef1b31b2880e
+SHA1:                2b31dffe8a4d21499246b165bd3dbe4d4267db49
+Strict time order:   True
+Number of interfaces in file: 1
+Interface #0 info:
+                     Encapsulation = Ethernet (1 - ether)
+                     Capture length = 262144
+                     Time precision = microseconds (6)
+                     Time ticks per second = 1000000
+                     Number of stat entries = 0
+                     Number of packets = 9092
