@@ -28,11 +28,24 @@ Repository root: `D:\Project-2-Purple-Team-Lab`
 All three VMs sit on a single VirtualBox **Host-Only** network, `192.168.56.0/24`.
 No bridged adapters. Nothing in this lab touches your home LAN or the internet.
 
-| VM | Role | Static IP | RAM | Adapter |
-|---|---|---|---|---|
-| Kali Linux | Attacker | 192.168.56.10 | 2–4 GB | Host-Only |
-| Windows 7 SP1 | Victim | 192.168.56.20 | 2 GB | Host-Only |
-| Ubuntu 20.04 Server | Snort sensor | 192.168.56.30 | 2 GB | Host-Only |
+| VM | Role | Static IP | RAM | Adapter 1 | Adapter 2 |
+|---|---|---|---|---|---|
+| Kali Linux | Attacker | 192.168.56.10 | 4 GB | Host-Only (`eth0`) | NAT — *disabled during runs* |
+| Windows 7 SP1 | Victim | 192.168.56.20 | 2 GB | Host-Only only | **none, ever** |
+| Ubuntu 20.04 Server | Snort sensor | 192.168.56.30 | 2 GB | NAT (`enp0s3`) | Host-Only (`enp0s8`), promiscuous |
+
+**The victim gets one adapter and it is host-only.** Windows 7 SP1 with no patches,
+SMBv1 enabled, firewall off and Defender disabled is precisely the machine that
+WannaCry ate in 2017. It must never see a route to the internet — not for updates,
+not for "just a second to download something". If you need a file on it, serve it
+from Kali over the host-only network.
+
+The sensor needs a NAT adapter purely to `apt install snort`. Disable it once Snort
+is installed so the sensor is also isolated during measured runs — and note in the
+report that the sensor was air-gapped during data collection.
+
+Kali's NAT adapter is likewise for updates only. Turn it off before any attack run so
+your captures contain lab traffic and nothing else.
 
 ### Why host-only instead of the bridged adapter the task sheets specify
 
@@ -59,21 +72,21 @@ A VirtualBox host-only network behaves like a **switch**, not a hub. By default 
 sensor VM will *not* see unicast traffic flowing between Kali and Windows 7 — Snort
 will sit there logging nothing and you will lose hours to it.
 
-For the **Ubuntu sensor VM only**:
+For the **Ubuntu sensor VM's host-only adapter (Adapter 2)**:
 
-**Settings → Network → Adapter 1 → Advanced → Promiscuous Mode → `Allow All`**
+**Settings → Network → Adapter 2 → Advanced → Promiscuous Mode → `Allow All`**
 
 Then inside the sensor, put the interface itself into promiscuous mode:
 
 ```
-sudo ip link set enp0s3 promisc on
-ip link show enp0s3        # confirm PROMISC appears in the flags
+sudo ip link set enp0s8 promisc on
+ip link show enp0s8        # confirm PROMISC appears in the flags
 ```
 
 Verify before going further — from Kali, ping the Windows 7 VM while the sensor runs:
 
 ```
-sudo tcpdump -i enp0s3 -n icmp
+sudo tcpdump -i enp0s8 -n icmp
 ```
 
 If you see the ICMP echo requests between `.10` and `.20`, the sensor is correctly
@@ -117,7 +130,7 @@ Before any attack, capture 10–15 minutes of ordinary traffic: the victim brows
 between VMs, file shares, idle chatter, DNS.
 
 ```
-sudo tcpdump -i enp0s3 -w /captures/baseline-clean.pcap
+sudo tcpdump -i enp0s8 -w /captures/baseline-clean.pcap
 ```
 
 This is your **false-positive control**. Replaying your finished rules against this
@@ -142,7 +155,7 @@ Restore the victim to `clean-baseline` before each run.
 On the sensor, before every single attack run:
 
 ```
-sudo tcpdump -i enp0s3 -w /captures/chainA-run1-$(date +%Y%m%d-%H%M%S).pcap
+sudo tcpdump -i enp0s8 -w /captures/chainA-run1-$(date +%Y%m%d-%H%M%S).pcap
 ```
 
 Note the wall-clock start time. You need timestamps to compute detection latency
@@ -339,7 +352,7 @@ alert tcp any any -> any any (msg:"TCP Connection Detected!"; sid:100006927; rev
 Run Snort:
 
 ```
-sudo snort -d -l /var/log/snort/ -A console -c /etc/snort/snort.conf -i enp0s3
+sudo snort -d -l /var/log/snort/ -A console -c /etc/snort/snort.conf -i enp0s8
 ```
 
 Generate traffic and confirm alerts appear. Screenshot it — that is **8.2HD Q3**.
