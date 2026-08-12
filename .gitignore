@@ -1,0 +1,51 @@
+# ---------------------------------------------------------------------------
+# Security exclusions — DO NOT REMOVE
+# Live payloads and exploit binaries are never committed to this repository.
+# The msfvenom commands and SHA-256 hashes in docs/01-attack-chain.md provide
+# full reproducibility without distributing working malware.
+# ---------------------------------------------------------------------------
+*.exe
+*.dll
+*.bin
+*.msi
+payloads/
+**/payloads/
+
+# Credential material captured in the lab
+*hashdump*
+*.ntds
+*creds*
+
+# ---------------------------------------------------------------------------
+# Oversized captures
+# GitHub rejects files over 100 MB and warns above 50 MB. Trim captures with
+# editcap or a tcpdump filter before committing — see docs/00-BUILD-GUIDE.md.
+# Raw untrimmed captures stay local in evidence/.
+# ---------------------------------------------------------------------------
+evidence/raw/
+*.pcap.raw
+*.pcapng.raw
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+.env
+.venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test artifacts
+.pytest_cache/
+
+# VS Code
+.vscode/
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
