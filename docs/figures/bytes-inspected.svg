@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="760" height="340" fill="#f7f8fa"/>
+
+  <text x="40" y="44" font-size="19" font-weight="600" fill="#1a1d23">Silent capture loss: bytes offered to Snort vs. bytes inspected</text>
+  <text x="40" y="68" font-size="13" fill="#5a6270">chainA-exploitation.pcap — Snort 3.12.2, default 1518-byte snaplen</text>
+
+  <!-- Bar 1: offered -->
+  <text x="40" y="110" font-size="13" font-weight="600" fill="#1a1d23">Capture contains</text>
+  <rect x="40" y="120" width="620" height="38" rx="3" fill="#3d6fb4"/>
+  <text x="52" y="144" font-size="14" font-weight="600" fill="#ffffff">1,237 kB · 493 packets</text>
+
+  <!-- Bar 2: inspected -->
+  <text x="40" y="196" font-size="13" font-weight="600" fill="#1a1d23">Snort actually inspected</text>
+  <rect x="40" y="206" width="620" height="38" rx="3" fill="#e4e7ec"/>
+  <rect x="40" y="206" width="83.7" height="38" rx="3" fill="#c0392b"/>
+  <text x="136" y="230" font-size="14" font-weight="600" fill="#c0392b">167.6 kB — 13.5%</text>
+
+  <!-- Loss bracket -->
+  <line x1="124" y1="252" x2="124" y2="262" stroke="#8a929e" stroke-width="1"/>
+  <line x1="660" y1="252" x2="660" y2="262" stroke="#8a929e" stroke-width="1"/>
+  <line x1="124" y1="262" x2="660" y2="262" stroke="#8a929e" stroke-width="1"/>
+  <text x="392" y="280" font-size="13" font-weight="600" fill="#5a6270" text-anchor="middle">86.5% never reached detection</text>
+
+  <!-- Conclusion -->
+  <rect x="40" y="296" width="620" height="28" rx="3" fill="#fdf0ee"/>
+  <text x="52" y="315" font-size="13" fill="#8c2f22">Snort reported no errors. Two rules returned zero alerts, indistinguishable from a correct non-match.</text>
+</svg>
