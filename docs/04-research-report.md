@@ -2,7 +2,7 @@
 
 ### An Experimental Study of Sensor Placement, Capture Fidelity and Rule Brittleness
 
-**Mannraj Singh Makin**
+**Mannraj**
 
 ---
 
