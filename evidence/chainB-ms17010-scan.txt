@@ -1,0 +1,4 @@
+RHOSTS => 192.168.56.20
+[+] 192.168.56.20:445     - Host is likely VULNERABLE to MS17-010! - Windows 7 Enterprise 7601 Service Pack 1 x86 (32-bit)
+[*] 192.168.56.20:445     - Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
