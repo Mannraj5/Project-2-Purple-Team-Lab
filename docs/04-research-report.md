@@ -398,39 +398,54 @@ once evidence of absence.
 
 ## References
 
+All references verified against the publisher of record. Web sources last
+accessed 13 August 2026.
+
 [1] M. Roesch, "Snort — lightweight intrusion detection for networks," in *Proc.
-13th USENIX Conf. on System Administration (LISA '99)*, Seattle, WA, USA, 1999.
+13th USENIX Conf. on System Administration (LISA '99)*, Seattle, WA, USA,
+Nov. 1999, pp. 229–238.
 
 [2] T. H. Ptacek and T. N. Newsham, "Insertion, evasion, and denial of service:
-Eluding network intrusion detection," Secure Networks Inc., Tech. Rep., Jan. 1998.
+Eluding network intrusion detection," Secure Networks Inc., Calgary, AB, Canada,
+Tech. Rep., Jan. 1998. (Also archived: U.S. Defense Technical Information Center,
+ADA391565.)
 
 [3] R. Sommer and V. Paxson, "Outside the closed world: On using machine learning
 for network intrusion detection," in *Proc. IEEE Symp. Security and Privacy*,
-Oakland, CA, USA, 2010.
+Oakland, CA, USA, May 2010, pp. 305–316, doi: 10.1109/SP.2010.25.
 
 [4] S. Axelsson, "The base-rate fallacy and the difficulty of intrusion
-detection," *ACM Trans. Information and System Security*, vol. 3, no. 3, 2000.
+detection," *ACM Trans. Information and System Security*, vol. 3, no. 3,
+pp. 186–205, Aug. 2000, doi: 10.1145/357830.357849.
 
 [5] K. Scarfone and P. Mell, "Guide to intrusion detection and prevention systems
-(IDPS)," National Institute of Standards and Technology, NIST Special Publication
-800-94, 2007.
+(IDPS)," National Institute of Standards and Technology, Gaithersburg, MD, USA,
+NIST Special Publication 800-94, Feb. 2007. [Online]. Available:
+https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-94.pdf
 
-[6] Cisco Systems, *Snort 3 User Manual*. [Online]. Available:
-https://snort.org/documents
+[6] Cisco Systems, *Snort 3 Documentation*. [Online]. Available:
+https://www.snort.org/documents
 
 [7] Microsoft Corporation, "Microsoft Security Bulletin MS17-010 — Critical:
-Security update for Microsoft Windows SMB Server," Mar. 2017.
+Security update for Microsoft Windows SMB Server (4013389)," Mar. 2017. [Online].
+Available:
+https://learn.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010
 
-[8] MITRE Corporation, *MITRE ATT&CK Enterprise Matrix*. Techniques T1204 (User
-Execution), T1210 (Exploitation of Remote Services), T1071 (Application Layer
-Protocol), T1055 (Process Injection). [Online]. Available: https://attack.mitre.org
+[8] MITRE Corporation, *MITRE ATT&CK Enterprise Matrix*. Techniques T1204.002
+(User Execution: Malicious File), T1210 (Exploitation of Remote Services),
+T1071.001 (Application Layer Protocol: Web Protocols), T1055 (Process Injection),
+T1134 (Access Token Manipulation), T1003.002 (OS Credential Dumping: Security
+Account Manager), T1569.002 (System Services: Service Execution). [Online].
+Available: https://attack.mitre.org
 
 [9] D. E. Denning, "An intrusion-detection model," *IEEE Trans. Software
-Engineering*, vol. SE-13, no. 2, 1987.
+Engineering*, vol. SE-13, no. 2, pp. 222–232, Feb. 1987,
+doi: 10.1109/TSE.1987.232894.
 
 [10] B. Anderson and D. McGrew, "Identifying encrypted malware traffic with
-contextual flow data," in *Proc. ACM Workshop on Artificial Intelligence and
-Security (AISec)*, Vienna, Austria, 2016.
+contextual flow data," in *Proc. 2016 ACM Workshop on Artificial Intelligence and
+Security (AISec '16)*, Vienna, Austria, Oct. 2016, pp. 35–46,
+doi: 10.1145/2996758.2996768.
 
 [11] Rapid7, *Metasploit Framework Documentation*. [Online]. Available:
 https://docs.metasploit.com
@@ -438,7 +453,7 @@ https://docs.metasploit.com
 [12] The Tcpdump Group, *tcpdump and libpcap documentation*. [Online]. Available:
 https://www.tcpdump.org
 
-[13] Linux Kernel Organization, *Segmentation Offloads — Linux Networking
+[13] Linux Kernel Organization, "Segmentation Offloads," *Linux Networking
 Documentation*. [Online]. Available:
 https://www.kernel.org/doc/html/latest/networking/segmentation-offloads.html
 
