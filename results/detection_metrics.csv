@@ -1,0 +1,25 @@
+capture,sid,msg,alerts,first_alert,last_alert,latency_s,benign,verdict
+baseline-clean-full,1000001,LAB-RECON ICMP echo request burst (possible host sweep),1485,2026-08-12T23:22:07.994931,2026-08-12T23:27:08.111819,13.846,True,false positive
+baseline-clean-full,1000002,LAB-RECON TCP SYN scan,0,,,,True,none
+baseline-clean-full,1000003,LAB-DELIVERY executable requested over HTTP,0,,,,True,none
+baseline-clean-full,1000004,LAB-EXPLOIT SMBv1 Trans2 request (possible MS17-010),0,,,,True,none
+baseline-clean-full,1000005,LAB-C2 Meterpreter callback to TCP 4444 (port-specific),0,,,,True,none
+baseline-clean-full,1000006,LAB-C2 PE executable transferred over TCP (possible payload stage),0,,,,True,none
+chainA-exploitation,1000001,LAB-RECON ICMP echo request burst (possible host sweep),0,,,,False,none
+chainA-exploitation,1000002,LAB-RECON TCP SYN scan,0,,,,False,none
+chainA-exploitation,1000003,LAB-DELIVERY executable requested over HTTP,1,2026-08-13T13:21:10.230686,2026-08-13T13:21:10.230686,620.593,False,alert
+chainA-exploitation,1000004,LAB-EXPLOIT SMBv1 Trans2 request (possible MS17-010),0,,,,False,none
+chainA-exploitation,1000005,LAB-C2 Meterpreter callback to TCP 4444 (port-specific),139,2026-08-13T13:21:19.730047,2026-08-13T13:27:42.184270,630.092,False,alert
+chainA-exploitation,1000006,LAB-C2 PE executable transferred over TCP (possible payload stage),2,2026-08-13T13:21:10.234669,2026-08-13T13:21:19.757367,620.597,False,alert
+chainA-recon,1000001,LAB-RECON ICMP echo request burst (possible host sweep),0,,,,False,none
+chainA-recon,1000002,LAB-RECON TCP SYN scan,65828,2026-08-13T00:05:25.450896,2026-08-13T00:05:45.788561,41.252,False,alert
+chainA-recon,1000003,LAB-DELIVERY executable requested over HTTP,0,,,,False,none
+chainA-recon,1000004,LAB-EXPLOIT SMBv1 Trans2 request (possible MS17-010),0,,,,False,none
+chainA-recon,1000005,LAB-C2 Meterpreter callback to TCP 4444 (port-specific),1,2026-08-13T00:05:32.724112,2026-08-13T00:05:32.724112,48.526,False,alert
+chainA-recon,1000006,LAB-C2 PE executable transferred over TCP (possible payload stage),0,,,,False,none
+chainB-clean,1000001,LAB-RECON ICMP echo request burst (possible host sweep),0,,,,False,none
+chainB-clean,1000002,LAB-RECON TCP SYN scan,0,,,,False,none
+chainB-clean,1000003,LAB-DELIVERY executable requested over HTTP,0,,,,False,none
+chainB-clean,1000004,LAB-EXPLOIT SMBv1 Trans2 request (possible MS17-010),2,2026-08-13T13:42:39.406810,2026-08-13T13:44:40.230692,5.036,False,alert
+chainB-clean,1000005,LAB-C2 Meterpreter callback to TCP 4444 (port-specific),0,,,,False,none
+chainB-clean,1000006,LAB-C2 PE executable transferred over TCP (possible payload stage),1,2026-08-13T13:45:39.353296,2026-08-13T13:45:39.353296,184.983,False,alert

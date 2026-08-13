@@ -1,0 +1,242 @@
+[
+  {
+    "capture": "baseline-clean-full",
+    "sid": 1000001,
+    "msg": "LAB-RECON ICMP echo request burst (possible host sweep)",
+    "alerts": 1485,
+    "first_alert": "2026-08-12T23:22:07.994931",
+    "latency_s": 13.845851,
+    "benign": true,
+    "verdict": "false positive"
+  },
+  {
+    "capture": "baseline-clean-full",
+    "sid": 1000002,
+    "msg": "LAB-RECON TCP SYN scan",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": true,
+    "verdict": "none"
+  },
+  {
+    "capture": "baseline-clean-full",
+    "sid": 1000003,
+    "msg": "LAB-DELIVERY executable requested over HTTP",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": true,
+    "verdict": "none"
+  },
+  {
+    "capture": "baseline-clean-full",
+    "sid": 1000004,
+    "msg": "LAB-EXPLOIT SMBv1 Trans2 request (possible MS17-010)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": true,
+    "verdict": "none"
+  },
+  {
+    "capture": "baseline-clean-full",
+    "sid": 1000005,
+    "msg": "LAB-C2 Meterpreter callback to TCP 4444 (port-specific)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": true,
+    "verdict": "none"
+  },
+  {
+    "capture": "baseline-clean-full",
+    "sid": 1000006,
+    "msg": "LAB-C2 PE executable transferred over TCP (possible payload stage)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": true,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainA-exploitation",
+    "sid": 1000001,
+    "msg": "LAB-RECON ICMP echo request burst (possible host sweep)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainA-exploitation",
+    "sid": 1000002,
+    "msg": "LAB-RECON TCP SYN scan",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainA-exploitation",
+    "sid": 1000003,
+    "msg": "LAB-DELIVERY executable requested over HTTP",
+    "alerts": 1,
+    "first_alert": "2026-08-13T13:21:10.230686",
+    "latency_s": 620.592742,
+    "benign": false,
+    "verdict": "alert"
+  },
+  {
+    "capture": "chainA-exploitation",
+    "sid": 1000004,
+    "msg": "LAB-EXPLOIT SMBv1 Trans2 request (possible MS17-010)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainA-exploitation",
+    "sid": 1000005,
+    "msg": "LAB-C2 Meterpreter callback to TCP 4444 (port-specific)",
+    "alerts": 139,
+    "first_alert": "2026-08-13T13:21:19.730047",
+    "latency_s": 630.092103,
+    "benign": false,
+    "verdict": "alert"
+  },
+  {
+    "capture": "chainA-exploitation",
+    "sid": 1000006,
+    "msg": "LAB-C2 PE executable transferred over TCP (possible payload stage)",
+    "alerts": 2,
+    "first_alert": "2026-08-13T13:21:10.234669",
+    "latency_s": 620.596725,
+    "benign": false,
+    "verdict": "alert"
+  },
+  {
+    "capture": "chainA-recon",
+    "sid": 1000001,
+    "msg": "LAB-RECON ICMP echo request burst (possible host sweep)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainA-recon",
+    "sid": 1000002,
+    "msg": "LAB-RECON TCP SYN scan",
+    "alerts": 65828,
+    "first_alert": "2026-08-13T00:05:25.450896",
+    "latency_s": 41.252391,
+    "benign": false,
+    "verdict": "alert"
+  },
+  {
+    "capture": "chainA-recon",
+    "sid": 1000003,
+    "msg": "LAB-DELIVERY executable requested over HTTP",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainA-recon",
+    "sid": 1000004,
+    "msg": "LAB-EXPLOIT SMBv1 Trans2 request (possible MS17-010)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainA-recon",
+    "sid": 1000005,
+    "msg": "LAB-C2 Meterpreter callback to TCP 4444 (port-specific)",
+    "alerts": 1,
+    "first_alert": "2026-08-13T00:05:32.724112",
+    "latency_s": 48.525607,
+    "benign": false,
+    "verdict": "alert"
+  },
+  {
+    "capture": "chainA-recon",
+    "sid": 1000006,
+    "msg": "LAB-C2 PE executable transferred over TCP (possible payload stage)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainB-clean",
+    "sid": 1000001,
+    "msg": "LAB-RECON ICMP echo request burst (possible host sweep)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainB-clean",
+    "sid": 1000002,
+    "msg": "LAB-RECON TCP SYN scan",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainB-clean",
+    "sid": 1000003,
+    "msg": "LAB-DELIVERY executable requested over HTTP",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainB-clean",
+    "sid": 1000004,
+    "msg": "LAB-EXPLOIT SMBv1 Trans2 request (possible MS17-010)",
+    "alerts": 2,
+    "first_alert": "2026-08-13T13:42:39.406810",
+    "latency_s": 5.036098,
+    "benign": false,
+    "verdict": "alert"
+  },
+  {
+    "capture": "chainB-clean",
+    "sid": 1000005,
+    "msg": "LAB-C2 Meterpreter callback to TCP 4444 (port-specific)",
+    "alerts": 0,
+    "first_alert": null,
+    "latency_s": null,
+    "benign": false,
+    "verdict": "none"
+  },
+  {
+    "capture": "chainB-clean",
+    "sid": 1000006,
+    "msg": "LAB-C2 PE executable transferred over TCP (possible payload stage)",
+    "alerts": 1,
+    "first_alert": "2026-08-13T13:45:39.353296",
+    "latency_s": 184.982584,
+    "benign": false,
+    "verdict": "alert"
+  }
+]
