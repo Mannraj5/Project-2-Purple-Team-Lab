@@ -1,0 +1,20 @@
+# Nmap 7.95 scan initiated Thu Aug 13 00:05:12 2026 as: /usr/lib/nmap/nmap -sS -sV -p- -oN /home/mannraj/evidence/chainA-nmap-full.txt 192.168.56.20
+Nmap scan report for 192.168.56.20
+Host is up (0.00029s latency).
+Not shown: 65525 closed tcp ports (reset)
+PORT      STATE SERVICE      VERSION
+22/tcp    open  ssh          OpenSSH 6.7 (protocol 2.0)
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds Microsoft Windows 7 - 10 microsoft-ds (workgroup: WORKGROUP)
+49152/tcp open  msrpc        Microsoft Windows RPC
+49153/tcp open  msrpc        Microsoft Windows RPC
+49154/tcp open  msrpc        Microsoft Windows RPC
+49155/tcp open  msrpc        Microsoft Windows RPC
+49156/tcp open  msrpc        Microsoft Windows RPC
+49157/tcp open  msrpc        Microsoft Windows RPC
+MAC Address: 08:00:27:99:B1:5F (PCS Systemtechnik/Oracle VirtualBox virtual NIC)
+Service Info: Host: IE8WIN7; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Thu Aug 13 00:06:44 2026 -- 1 IP address (1 host up) scanned in 92.24 seconds
