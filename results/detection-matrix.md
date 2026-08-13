@@ -28,8 +28,9 @@ snort -c /etc/snort/snort.lua \
 | 6 | PE transfer, content-based | 0 | 0 | **2** | **1** |
 
 Captures: `baseline-clean-full` 9,092 pkt (benign control) · `chainA-recon`
-132,727 pkt · `chainA-exploitation` 493 pkt · `chainB-clean` (Chain B with the
-residual Chain A session on 4444 filtered out).
+132,727 pkt · `chainA-exploitation` 493 pkt · `chainB-clean` 563 pkt (Chain B with the
+residual Chain A session on 4444 filtered out; 18 packets removed of 581). Full inventory with SHA-256 digests and derivations in
+[`pcaps/README.md`](../pcaps/README.md).
 
 ## Principal result — signature brittleness
 

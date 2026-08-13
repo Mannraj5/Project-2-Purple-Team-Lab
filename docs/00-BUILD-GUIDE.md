@@ -417,7 +417,7 @@ requirement is really asking for.
 For machine-readable output feeding Phase 3:
 
 ```
-snort -c /etc/snort/snort.lua -R /etc/snort/rules/local.rules -r /captures/chainA-run1.pcap -A alert_json -l /var/log/snort
+snort -c /etc/snort/snort.lua -R /etc/snort/rules/local.rules -r /captures/chainA-run1.pcap \n      -A alert_json -l /var/log/snort -s 65535 --lua "network = { checksum_eval = 'none' }"
 ```
 
 ---

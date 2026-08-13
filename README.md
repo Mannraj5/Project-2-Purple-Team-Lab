@@ -148,9 +148,9 @@ for the wrong signal.
 ## What's included
 
 ```
-docs/       build guide, report structure, figures, screenshots
+docs/       build guide, write-ups, report, figures, screenshots
 rules/      the Snort 3 ruleset, with the required invocation documented
-pcaps/      all captures — benign control, recon, both attack chains
+pcaps/      all captures, with an inventory of digests and derivations
 evidence/   addressing, attack surface, capture provenance, payload hashes
 scripts/    replay harness and alert-log analysis
 results/    detection matrix, metrics CSV/JSON, written analysis
@@ -165,6 +165,7 @@ tests/      12 tests covering the analysis tooling
 | [Detection results](results/detection-matrix.md) | Alert matrix, timing, instrumentation failures |
 | [Research report](docs/04-research-report.md) | The written analysis — 2,871 words, IEEE references |
 | [Ruleset](rules/local.rules) | Six signatures, commented, with required flags explained |
+| [Capture inventory](pcaps/README.md) | Every capture: packet counts, SHA-256 digests, how each was derived |
 
 ---
 

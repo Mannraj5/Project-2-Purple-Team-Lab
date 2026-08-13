@@ -202,7 +202,7 @@ def main() -> int:
         ),
         encoding="utf-8",
     )
-    (args.out / "detection_matrix.md").write_text(
+    (args.out / "detection_matrix_generated.md").write_text(
         markdown_table(all_rows, processed) + "\n", encoding="utf-8"
     )
 
