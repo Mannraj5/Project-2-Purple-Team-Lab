@@ -15,6 +15,17 @@ Usage (on the Kali sensor):
 Captures whose names contain "baseline" are treated as the benign control, so
 alerts against them are labelled false positives.
 
+Score only captures that do not overlap. A merged or untrimmed capture contains
+the same packets as the captures derived from it, so scoring both counts those
+packets twice and inflates every total. For this lab the non-overlapping set is:
+
+    --exclude 'baseline-clean.pcap' \\
+    --exclude 'baseline-smb.pcap' \\
+    --exclude 'chainA-run1.pcap' \\
+    --exclude 'chainB-run1.pcap'
+
+leaving baseline-clean-full, chainA-recon, chainA-exploitation and chainB-clean.
+
 On offload-affected captures pass --endpoint-capture (the default). Captures
 taken after `ethtool -K <if> tx off rx off tso off gso off gro off`, or from an
 out-of-band sensor, should use --no-endpoint-capture. See the rules file header
@@ -112,12 +123,29 @@ def main() -> int:
                         action="store_true", default=True)
     parser.add_argument("--no-endpoint-capture", dest="endpoint_capture",
                         action="store_false")
+    parser.add_argument(
+        "--exclude", action="append", default=[], metavar="GLOB",
+        help="Skip captures matching this glob; repeatable. Use it to drop "
+             "captures superseded by a trim or merge — scoring both a parent "
+             "capture and the captures derived from it counts the same "
+             "packets more than once and inflates every total.",
+    )
     args = parser.parse_args()
 
     pcaps = sorted(args.pcap_dir.glob("*.pcap"))
     if not pcaps:
         print(f"no .pcap files in {args.pcap_dir}", file=sys.stderr)
         return 1
+
+    if args.exclude:
+        kept = [p for p in pcaps
+                if not any(p.match(pat) for pat in args.exclude)]
+        for dropped in sorted(set(pcaps) - set(kept)):
+            print(f"  excluded {dropped.stem}")
+        pcaps = kept
+        if not pcaps:
+            print("every capture was excluded", file=sys.stderr)
+            return 1
 
     known = rules_from_file(args.rules)
     print(f"{len(known)} rules loaded from {args.rules}")
