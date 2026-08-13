@@ -214,7 +214,7 @@ Further screenshots in [`docs/screenshots/`](docs/screenshots/).
 
 ## Author
 
-**Manraj Singh Makin** — [github.com/Mannraj5](https://github.com/Mannraj5)
+**Mannraj Singh Makin** — [github.com/Mannraj5](https://github.com/Mannraj5)
 
 ## License
 
