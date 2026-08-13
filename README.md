@@ -159,9 +159,11 @@ tests/      12 tests covering the analysis tooling
 
 | Document | Contents |
 |---|---|
-| [Build guide](docs/00-BUILD-GUIDE.md) | Full lab construction and execution procedure, design decisions, troubleshooting log |
-| [Detection results](results/detection-matrix.md) | Full analysis, timing, instrumentation failures |
-| [Report structure](docs/03-research-report.md) | Argument and section skeleton for the written report |
+| [Build guide](docs/00-BUILD-GUIDE.md) | Lab construction and execution procedure, design decisions, troubleshooting log |
+| [Attack chains](docs/01-attack-chain.md) | Execution record, ATT&CK mapping, findings, defender's-eye view |
+| [Detection engineering](docs/02-detection-engineering.md) | Rule-by-rule rationale, evasion analysis, how the silent failures were diagnosed |
+| [Detection results](results/detection-matrix.md) | Alert matrix, timing, instrumentation failures |
+| [Research report](docs/04-research-report.md) | The written analysis — 2,871 words, IEEE references |
 | [Ruleset](rules/local.rules) | Six signatures, commented, with required flags explained |
 
 ---
