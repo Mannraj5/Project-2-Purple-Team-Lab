@@ -5,8 +5,28 @@
 #
 # Deploy:  sudo cp local.rules /etc/snort/rules/local.rules
 # Verify:  sudo snort -c /etc/snort/snort.lua -R /etc/snort/rules/local.rules --warn-all -T
+#
 # Replay:  snort -c /etc/snort/snort.lua -R /etc/snort/rules/local.rules \
-#                -r <capture.pcap> -A alert_fast -q
+#                -r <capture.pcap> -A alert_fast -q -s 65535 \
+#                --lua "network = { checksum_eval = 'none' }"
+#
+# BOTH extra flags are required for captures taken on an endpoint, and neither
+# is optional tuning. Without them rules 4 and 6 return zero alerts against
+# traffic that provably matches them:
+#
+#   -s 65535            NIC segmentation offload produces frames far larger
+#                       than the MTU. Snort's pcap DAQ defaults to a 1518-byte
+#                       snaplen and truncates them, after which the decoder
+#                       discards them as malformed. Without this, Snort ingests
+#                       roughly 13% of the capture's bytes.
+#
+#   checksum_eval=none  Transmit checksum offload means packets captured on the
+#                       sending host carry unfinished checksums. Snort discards
+#                       bad-checksum packets before detection. All C2 and
+#                       delivery traffic here is outbound from the attacker.
+#
+# Captures taken after `ethtool -K eth0 tx off rx off tso off gso off gro off`,
+# or from an out-of-band sensor, need neither. See results/detection-matrix.md.
 #
 # Note on rule direction: in this lab both attacker and victim sit inside
 # HOME_NET, so the $EXTERNAL_NET -> $HOME_NET convention that public rulesets
